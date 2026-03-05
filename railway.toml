@@ -1,0 +1,37 @@
+services:
+  backend:
+    image: ghcr.io/your-username/terminal-backend:main
+    variables:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        value: postgresql://postgres:${{ secrets.DB_PASSWORD }}@localhost:5432/terminal_db
+      - key: REDIS_URL
+        value: redis://localhost:6379
+      - key: JWT_SECRET
+        secret: true
+      - key: SEI_NETWORK
+        value: testnet
+      - key: SEI_RPC_URL
+        value: https://evm-rpc-testnet.sei-apis.com
+    port: 4000
+
+  frontend:
+    image: ghcr.io/your-username/terminal-frontend:main
+    variables:
+      - key: VITE_API_BASE_URL
+        value: https://terminal-backend.railway.app
+    port: 3000
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      - POSTGRES_DB: terminal_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data

@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: terminal_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: backend.Dockerfile
+    ports:
+      - "4000:4000"
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 4000
+      DATABASE_URL: postgresql://postgres:${DB_PASSWORD:-postgres}@postgres:5432/terminal_db
+      REDIS_URL: redis://redis:6379
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      SEI_NETWORK: ${SEI_NETWORK:-testnet}
+      SEI_RPC_URL: ${SEI_RPC_URL:-https://evm-rpc-testnet.sei-apis.com}
+      SEI_WS_URL: ${SEI_WS_URL:-wss://evm-ws-testnet.sei-apis.com}
+      FINNHUB_API_KEY: ${FINNHUB_API_KEY:-}
+      POLYGON_API_KEY: ${POLYGON_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend/src:/app/backend/src
+    command: npm run dev
+
+  # Frontend (production build served by backend)
+  # In production, frontend is embedded in backend image
+  # For development, run separately with: cd frontend && npm run dev
+
+volumes:
+  postgres_data:
+  redis_data:

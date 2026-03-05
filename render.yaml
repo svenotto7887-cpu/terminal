@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: terminal-backend
+    plan: standard
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromDatabase:
+          name: redis
+          property: connectionString
+      - key: JWT_SECRET
+        sync: false
+      - key: FRONTEND_ORIGIN
+        value: ${FRONTEND_ORIGIN}
+      - key: SEI_NETWORK
+        value: testnet
+      - key: SEI_RPC_URL
+        value: https://evm-rpc-testnet.sei-apis.com
+
+  - type: web
+    name: terminal-frontend
+    plan: starter
+    staticPublishPath: ./frontend/dist
+    buildCommand: npm run build --workspace=frontend
+
+databases:
+  - name: postgres
+    plan: starter
+    version: 15
+
+databases:
+  - name: redis
+    plan: starter
+    version: 7

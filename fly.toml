@@ -1,0 +1,37 @@
+# Fly.io Configuration
+# Deploy with: fly deploy
+
+app = "terminal"
+primary_region = "ord"
+
+[build]
+  dockerfile = "backend.Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+
+[[services]]
+  protocol = "tcp"
+  internal_port = 4000
+  
+  [services.concurrency]
+    type = "connections"
+    hard_limit = 100
+    soft_limit = 80
+
+[[services.ports]]
+  handlers = ["http"]
+  port = "80"
+
+[[services.ports]]
+  handlers = ["tls", "http"]
+  port = "443"
+
+[[mounts]]
+  source = "postgres_data"
+  destination = "/app/postgres_data"
+
+# Postgres extension for fly.io
+[postgres]
+  enabled = true
+  version = "15"
