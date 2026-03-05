@@ -1,7 +1,10 @@
 services:
   - type: web
     name: terminal-backend
-    plan: standard
+    runtime: node
+    plan: starter
+    buildCommand: cd backend && npm install && npm run build
+    startCommand: node dist/index.js
     envVars:
       - key: NODE_ENV
         value: production
@@ -16,7 +19,7 @@ services:
       - key: JWT_SECRET
         sync: false
       - key: FRONTEND_ORIGIN
-        value: ${FRONTEND_ORIGIN}
+        sync: false
       - key: SEI_NETWORK
         value: testnet
       - key: SEI_RPC_URL
@@ -24,16 +27,20 @@ services:
 
   - type: web
     name: terminal-frontend
-    plan: starter
+    runtime: static
+    buildCommand: npm install && npm run build --workspace=frontend
     staticPublishPath: ./frontend/dist
-    buildCommand: npm run build --workspace=frontend
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false
 
 databases:
   - name: postgres
     plan: starter
     version: 15
+    ipAllowList: []
 
-databases:
   - name: redis
     plan: starter
     version: 7
+    ipAllowList: []
