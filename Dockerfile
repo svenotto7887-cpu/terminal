@@ -1,43 +1,43 @@
-# Build stage
-FROM node:18-alpine AS builder
+# Build frontend stage
+FROM node:18-alpine AS frontend-builder
 
-WORKDIR /app
-
-# Copy root package files
-COPY package*.json ./
-
-# Copy backend and frontend directories
-COPY backend ./backend
-COPY frontend ./frontend
-
-# Install dependencies
-RUN npm install
-
-# Build frontend
 WORKDIR /app/frontend
+
+COPY frontend/package*.json ./
+RUN npm install
+COPY frontend .
+RUN npm run build
+
+# Build backend stage
+FROM node:18-alpine AS backend-builder
+
+WORKDIR /app/backend
+
+COPY backend/package*.json ./
+RUN npm install
+COPY backend .
 RUN npm run build
 
 # Runtime stage
 FROM node:18-alpine
 
-WORKDIR /app
-
-# Install only production dependencies for backend
-RUN npm install -g pm2
-
-COPY backend/package*.json ./backend/
 WORKDIR /app/backend
+
+# Install only production dependencies
+COPY backend/package*.json ./
 RUN npm install --production
 
+# Copy built backend
+COPY --from=backend-builder /app/backend/dist ./dist
+
 # Copy built frontend
-COPY --from=builder /app/frontend/dist /app/backend/dist
+COPY --from=frontend-builder /app/frontend/dist ./dist
 
-# Copy backend source
+# Copy backend source files needed at runtime
 COPY backend/src ./src
-COPY backend/tsconfig.json ./
 
-# Build TypeScript
-RUN npm run build
+# Copy config files
+COPY backend/tsconfig.json ./
 
 WORKDIR /app/backend
 
