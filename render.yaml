@@ -1,16 +1,18 @@
 services:
-  # Backend API Server
+  # Backend API Server - Native Node.js
   - type: web
     name: terminal-backend
     runtime: node
     plan: starter
-    buildCommand: cd backend && npm install && npm run build
-    startCommand: cd backend && node dist/index.js
+    buildCommand: npm install && npm run build --workspace=backend
+    startCommand: node backend/dist/index.js
+    healthCheckPath: /health
+    numInstances: 1
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 4000
+        value: "4000"
       - key: DATABASE_URL
         fromDatabase:
           name: postgres
@@ -31,15 +33,18 @@ services:
     buildCommand: npm install && npm run build --workspace=frontend
     staticPublishPath: frontend/dist
     routes:
+      - path: /api/*
+        destination: https://terminal-backend-[auto].onrender.com/api/*
+      - path: /socket.io/*
+        destination: https://terminal-backend-[auto].onrender.com/socket.io/*
       - path: /*
         destination: /index.html
 
 databases:
   - name: postgres
     plan: starter
-    version: 15
+    ipAllowList: []
 
   - name: redis
     plan: starter
-    version: 7
     ipAllowList: []
